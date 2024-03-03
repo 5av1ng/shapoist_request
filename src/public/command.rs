@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use crate::public::resource::User;
 use crate::public::resource::Mail;
 use crate::public::resource::UpdateType;
@@ -15,11 +16,6 @@ pub enum RequestCommand {
 	SourceCommand(SourceCommand),
 	/// Detailed info check [`InfoCommand`]
 	Info(InfoCommand),
-	/// report something
-	Report {
-		reason: String,
-		ty: ReportType
-	},
 	/// normally user would not have permission to access these command
 	Admin(AdminCommand),
 }
@@ -28,6 +24,31 @@ pub enum RequestCommand {
 #[non_exhaustive]
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub enum AdminCommand {
+	/// publish a new update, contains binary file.
+	PublishUpdate(Vec<u8>),
+	/// publish a new notice, contains notice itself, using markdown
+	PublishNotice(String),
+	/// contains uid
+	UserBan(u64),
+	/// contains uid
+	UserPardon(u64),
+	/// contains ip
+	BanIp(String),
+	/// contains ip
+	PardonIp(String),
+	/// every document was written in markdown, contains what document should change
+	DocumentChange(PathBuf, String),
+	/// contains what document should create
+	DocumentCrate(PathBuf),
+	/// get all reports
+	GetReport {
+		page: usize,
+		ty: ReportType
+	},
+	/// to manager server data more precisely.
+	GetFile(PathBuf),
+	/// to manager server data more precisely.
+	GetFileList,
 }
 
 /// possible user commands
@@ -35,7 +56,7 @@ pub enum AdminCommand {
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub enum UserCommand {
 	/// login with given uid and token
-	Login,
+	Login(LoginType),
 	/// registrate with given infomation, password is saved in token
 	Registrate {
 		mail: Mail,
@@ -48,12 +69,10 @@ pub enum UserCommand {
 	Logoff,
 	/// user will use given email to get a password-change email.
 	ForgetPass(Mail),
+	/// user will use given email to get a confirmation email.
+	ConfirmationCode(Mail),
 	/// contains new Info.
 	ChangeInfo(User),
-	/// contains uid
-	Ban(u64),
-	/// contains uid
-	Pardon(u64),
 	/// contains uid,
 	Blacklist(u64),
 	/// contains uid,
@@ -64,16 +83,28 @@ pub enum UserCommand {
 	Replay(Vec<u8>)
 }
 
+/// the way user login
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+pub enum LoginType {
+	Mail(Mail),
+	Uid(u64)
+}
+
 /// possible infomation-get commands
 ///
 /// Only this command doesn't require uid and token
 #[non_exhaustive]
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub enum InfoCommand {
+	/// report something
+	Report {
+		reason: String,
+		ty: ReportType
+	},
 	/// Get the newest update from given option
 	GetUpdate(UpdateType),
-	/// Get the newest n notices
-	GetNotice(u64),
+	/// Get the notices by id, None for newest
+	GetNotice(Option<u64>),
 }
 
 /// Report type
@@ -85,8 +116,8 @@ pub enum ReportType {
 		id: u64
 	},
 	Comment {
-		ty: ResourceType,
-		id: u64,
+		resource_type: ResourceType,
+		resource_id: u64,
 		comment_id: u64
 	},
 	/// contains uid
@@ -101,10 +132,8 @@ pub enum SourceCommand {
 	/// get shop info
 	GetShopInfo {
 		/// requested resource type, [`Option::None`] for main page 
-		ty : Option<ResourceType>,
-		/// requested resource type
-		module: String,
-		/// requested resource page
+		ty: Option<ResourceType>,
+		/// requested resource page, start from zero
 		page: usize,
 	},
 	/// comment to a resource
@@ -131,11 +160,18 @@ pub enum SourceCommand {
 		ty: Option<ResourceType>
 	},
 	/// upload a new resource
-	Upload{
-		file: Vec<u8>,
+	UploadBegin {
+		total: u64,
 		/// [`Option::None`] for not a update request
 		update: Option<u64>,
 		ty: ResourceType
+	},
+	/// we'll update separately
+	UploadProcess {
+		id: u64,
+		file: Vec<u8>,
+		/// temportary solution
+		is_config: bool
 	},
 	/// download a resource, contains resource id and resource type
 	Download(u64, ResourceType),
@@ -146,9 +182,11 @@ pub enum SourceCommand {
 		/// [`Option::None`] for delete a resource, otherwise delete a reply
 		comment: Option<u64>
 	},
+	/// user can partly access this function
 	ChangeCondition{
 		id: u64, 
 		ty: ResourceType,
+		/// represent config.toml
 		condition: String,
 	},
 }

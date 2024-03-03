@@ -1,3 +1,4 @@
+use time::OffsetDateTime;
 use thiserror::Error;
 use std::collections::HashMap;
 
@@ -33,7 +34,7 @@ pub enum UpdateType {
 /// # use shapoist_request::Mail;
 /// Mail::from("name@domain").unwrap();
 /// ```
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct Mail {
 	pub name: String,
 	pub domain: String,
@@ -55,8 +56,8 @@ pub enum BadEmail {
 	#[error("mail misses domain field")]
 	MissingDomain,
 	/// mail has invailed domain
-	#[error("mail has invailed domain")]
-	InvailedDomain,
+	#[error("mail has invaild domain")]
+	InvaildDomain,
 }
 
 impl Mail {
@@ -76,7 +77,7 @@ impl Mail {
 		}else {
 			let domain_split: Vec<&str> = input_split[1].split(".").collect();
 			if domain_split.len() != 2 {
-				return Err(BadEmail::InvailedDomain)
+				return Err(BadEmail::InvaildDomain)
 			}
 			return Ok(Self {
 				name: input_split[0].into(),
@@ -89,8 +90,9 @@ impl Mail {
 
 /// a user saved in server
 #[non_exhaustive]
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub struct User {
+	pub uid: u64,
 	pub username: String,
 	/// r g b a r g b a ...
 	pub avator: Vec<u8>,
@@ -104,3 +106,10 @@ pub struct User {
 /// TODO
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Replay {}
+
+/// confirmation code and when the code create.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ConfirmationCode {
+	pub code: usize,
+	pub time: OffsetDateTime
+}
