@@ -88,8 +88,8 @@ pub enum TokenError {
 	TokenUnmatch,
 	#[error("length is not enough to decrypt")]
 	InvalidLength,
-	#[error("error during using rsa, info: {0}")]
-	RsaError(#[from] rsa::errors::Error),
+	// #[error("error during using rsa, info: {0}")]
+	// RsaError(#[from] rsa::errors::Error),
 	#[error("error during decoding utf8 string, info: {0}")]
 	Utf8DecodeError(#[from] std::string::FromUtf8Error),
 	#[error("error during decoding base64 string, info: {0}")]

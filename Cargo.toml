@@ -11,14 +11,14 @@ thiserror = "1.0.50"
 reqwest = { version = "0.11.23", optional = true }
 log = "0.4.20"
 serde_json = "1.0.108"
-md5 = "0.7.0"
-sha256 = "1.5.0"
-base64 = "0.21.7"
-rsa = { version = "0.9.6", features = ["serde"] }
+md5 = { version = "0.7.0", optional = true }
+sha256 = { version = "1.5.0", optional = true }
+base64 = { version = "0.21.7", optional = true }
+# rsa = { version = "0.9.6", features = ["serde"] }
 time = { version = "0.3.34", features = ["serde"] }
 rand = "0.8.5"
 
 [features]
 default = []
-server = []
-client = ["reqwest"]
+server = ["md5", "sha256", "base64"]
+client = ["base64"]
